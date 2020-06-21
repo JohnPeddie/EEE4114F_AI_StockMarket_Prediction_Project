@@ -1,6 +1,9 @@
 # AiStockMarketReader
 A personal project using AI to predict stock market prices
 
+The previous git repo this was hosted on went corrupt :c Hopefully this is all working properly now though
+
+
 Run the AiStockMarketPredictor.py file to run
 
 

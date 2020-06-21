@@ -146,7 +146,7 @@ class DataGeneratorSeq(object):
 #===============================================================================
 
 #Fetch data and format it for the rest of the program
-df = fetchData('kaggle', 'hpq') #fetch the necessary data
+df = fetchData('kaggle', 'ge') #fetch the necessary data
 df = df.sort_values('Date') #sorts the dataframe by date
 
 #plot the dataframe do see a visualization:

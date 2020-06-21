@@ -1,4 +1,4 @@
-#Initially fetch all requirements:
+    #Initially fetch all requirements:
 #requirements:
 from ApiKeyFetcher import getKey #homebrew solution to import the api key so it doesnt get shared on github
 from pandas_datareader import data
@@ -401,3 +401,181 @@ print('\tTraining, optimizing and prediction prerparation complete')
 #===============================================================================
 #Actiual ML LSTM part
 #===============================================================================
+
+#define states/operations/constants
+epochs = 10 #number of runs
+validSummary = 1 # test predictions interval
+numPredictContinous = 50 # Number of steps to continously predict for
+
+trainSeqLength = trainData.size # Full length of the training data
+
+trainMseOt = [] # Accumulate Train losses
+testMseOt = [] # Accumulate Test loss
+predictionsOverTime = [] # Accumulate predictions
+
+session = tf.InteractiveSession()
+
+tf.global_variables_initializer().run()
+
+# Used for decaying learning rate
+lossNondecreaseCount = 0
+lossNondecreaseThreshold = 2 # If the test error hasn't increased in this many steps, decrease learning rate
+
+print('LSTM Training and Epochs Initialized')
+averageLoss = 0
+
+# Define data generator
+dataGen = DataGeneratorSeq(trainData,batchSize,futurePredictions)
+
+xAxisSeq = []
+
+# points to start predictions from
+testPointsSeq = np.arange(11000,12000,50).tolist()
+mseArray =[]
+times =[]
+
+#===============================================================================
+#LSTM based on the work of Thushan Ganegedara and jaungiers
+#-> https://github.com/jaungiers/LSTM-Neural-Network-for-Time-Series-Prediction
+#===============================================================================
+for ep in range(epochs):
+    now = datetime.now()#used for timing each epoch to work out total time remaining
+    # ========================= Training =====================================
+    for step in range(trainSeqLength//batchSize):
+
+        uData, uLabels = dataGen.unroll_batches()
+
+        feedDict = {}
+        for ui,(dat,lbl) in enumerate(zip(uData,uLabels)):
+            feedDict[trainInputs[ui]] = dat.reshape(-1,1)
+            feedDict[trainOutputs[ui]] = lbl.reshape(-1,1)
+
+        feedDict.update({tfLearningRate: 0.0001, tfMinLearningRate:0.000001})
+
+        _, l = session.run([optimizer, loss], feed_dict=feedDict)
+
+        averageLoss += l
+
+    # ============================ Validation ==============================
+    if (ep+1) % validSummary == 0:
+
+        averageLoss = averageLoss/(validSummary*(trainSeqLength//batchSize))
+
+        # The average loss
+        if (ep+1)%validSummary==0:
+            print('Average loss at step %d: %f' % (ep+1, averageLoss))
+
+        trainMseOt.append(averageLoss)
+
+        averageLoss = 0 # reset loss
+
+        predictionsSeq = []
+
+        mseTestLossSeq = []
+
+        # ===================== Updating State and Making Predicitons ========================
+        for w_i in testPointsSeq:
+            mseTestLoss = 0.0
+            ourPredictions = []
+
+            if (ep+1)-validSummary==0:
+                # Only calculate x_axis values in the first validation epoch
+                xAxis=[]
+
+            # Feed in the recent past behavior of stock prices
+            # to make predictions from that point onwards
+            for tr_i in range(w_i-futurePredictions+1,w_i-1):
+                currentPrice = allMidpointData[tr_i]
+                feedDict[sampleInputs] = np.array(currentPrice).reshape(1,1)
+                _ = session.run(samplePrediction,feed_dict=feedDict)
+
+            feedDict = {}
+
+            currentPrice = allMidpointData[w_i-1]
+
+            feedDict[sampleInputs] = np.array(currentPrice).reshape(1,1)
+
+            # Make predictions for this many steps
+            # Each prediction uses previous prediciton as it's current input
+            for pred_i in range(numPredictContinous):
+
+                pred = session.run(samplePrediction,feed_dict=feedDict)
+
+                ourPredictions.append(np.asscalar(pred))
+
+                feedDict[sampleInputs] = np.asarray(pred).reshape(-1,1)
+
+                if (ep+1)-validSummary==0:
+                    # Only calculate x_axis values in the first validation epoch
+                    xAxis.append(w_i+pred_i)
+
+                mseTestLoss += 0.5*(pred-allMidpointData[w_i+pred_i])**2
+
+            session.run(resetSampleStates)
+
+            predictionsSeq.append(np.array(ourPredictions))
+
+            mseTestLoss /= numPredictContinous
+            mseTestLossSeq.append(mseTestLoss)
+
+            if (ep+1)-validSummary==0:
+                xAxisSeq.append(xAxis)
+
+        currentTestMse = np.mean(mseTestLossSeq)
+
+        # Learning rate decay logic
+        if len(testMseOt)>0 and currentTestMse > min(testMseOt):
+            lossNondecreaseCount += 1
+        else:
+            lossNondecreaseCount = 0
+
+        if lossNondecreaseCount > lossNondecreaseThreshold :
+            session.run(incGStep)
+            lossNondecreaseCount = 0
+            print('\tDecreasing learning rate by 0.5')
+
+        testMseOt.append(currentTestMse)
+        print('\tTest MSE: %.5f'%np.mean(mseTestLossSeq))
+        mseArray.append(mseTestLossSeq)
+        predictionsOverTime.append(predictionsSeq)
+        elapsedTime = (datetime.now()-now)
+        times.append(elapsedTime)
+        timeRemaining = np.mean(times)*(epochs-(ep+1))
+        print('\tFinished Predictions, elapsed time: '+ str(elapsedTime) + ' And time remaining: ' + str(timeRemaining))
+
+#===============================================================================
+#plotting data and showing Evolution
+#===============================================================================
+
+bestIndex = mseArray.index(min(mseArray))
+bestPredictionEpoch = bestIndex+1 # replace with best epoch
+print("best epoch: "+str(bestPredictionEpoch))
+plt.figure(figsize = (18,18))
+plt.subplot(2,1,1)
+plt.plot(range(df.shape[0]),allMidpointData,color='b')
+
+# Plotting how the predictions change over time
+# Plot older predictions with low alpha and newer predictions with high alpha
+startAlpha = 0.25
+alpha  = np.arange(startAlpha,1.1,(1.0-startAlpha)/len(predictionsOverTime[::3]))
+for p_i,p in enumerate(predictionsOverTime[::3]):
+    for xval,yval in zip(xAxisSeq,p):
+        plt.plot(xval,yval,color='r',alpha=alpha[p_i])
+
+plt.title('Evolution of Test Predictions Over Time',fontsize=18)
+plt.xlabel('Date',fontsize=18)
+plt.ylabel('Mid Price',fontsize=18)
+plt.xlim(11000,12500)
+
+plt.subplot(2,1,2)
+
+# Predicting the best test prediction you got
+plt.plot(range(df.shape[0]),allMidpointData,color='b')
+for xval,yval in zip(xAxisSeq,predictionsOverTime[bestPredictionEpoch]):
+    plt.plot(xval,yval,color='r')
+
+plt.title('Best Test Predictions Over Time',fontsize=18)
+plt.xlabel('Date',fontsize=18)
+plt.ylabel('Mid Price',fontsize=18)
+plt.xlim(11000,12500)
+plt.show()

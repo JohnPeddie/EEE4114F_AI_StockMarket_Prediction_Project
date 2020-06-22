@@ -548,7 +548,7 @@ for ep in range(epochs):
 #===============================================================================
 
 bestIndex = mseArray.index(min(mseArray))
-bestPredictionEpoch = bestIndex+1 # replace with best epoch
+bestPredictionEpoch = 10# replace with best epoch
 print("best epoch: "+str(bestPredictionEpoch))
 plt.figure(figsize = (18,18))
 plt.subplot(2,1,1)

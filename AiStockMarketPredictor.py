@@ -287,7 +287,7 @@ for ui,(dat,lbl) in enumerate(zip(unrolledData,unrolledLabels)):
     print('\n\tOutput:',lbl)
 
 D = 1 #Dimensionality of the data, 1d dataset means D=1
-futurePredictions = 10 #number of samples to look into the futurePredictions
+futurePredictions = 100 #number of samples to look into the futurePredictions
 batchSize = 500 #number of samples in a batchSize
 numHiddenNodes = [200,200,200] #number of hidden nodes in each lyer of the LSTM
 numLayers = len(numHiddenNodes)# number of total layers
@@ -405,7 +405,7 @@ print('\tTraining, optimizing and prediction prerparation complete')
 #define states/operations/constants
 epochs = 10 #number of runs
 validSummary = 1 # test predictions interval
-numPredictContinous = 10 # Number of steps to continously predict for
+numPredictContinous = 100 # Number of steps to continously predict for
 
 trainSeqLength = trainData.size # Full length of the training data
 

@@ -287,7 +287,7 @@ for ui,(dat,lbl) in enumerate(zip(unrolledData,unrolledLabels)):
     print('\n\tOutput:',lbl)
 
 D = 1 #Dimensionality of the data, 1d dataset means D=1
-futurePredictions = 100 #number of samples to look into the futurePredictions
+futurePredictions = 10 #number of samples to look into the futurePredictions
 batchSize = 500 #number of samples in a batchSize
 numHiddenNodes = [200,200,200] #number of hidden nodes in each lyer of the LSTM
 numLayers = len(numHiddenNodes)# number of total layers
@@ -405,7 +405,7 @@ print('\tTraining, optimizing and prediction prerparation complete')
 #define states/operations/constants
 epochs = 10 #number of runs
 validSummary = 1 # test predictions interval
-numPredictContinous = 100 # Number of steps to continously predict for
+numPredictContinous = 10 # Number of steps to continously predict for
 
 trainSeqLength = trainData.size # Full length of the training data
 
@@ -548,7 +548,7 @@ for ep in range(epochs):
 #===============================================================================
 
 bestIndex = mseArray.index(min(mseArray))
-bestPredictionEpoch = 10# replace with best epoch
+bestPredictionEpoch = 9# replace with best epoch
 print("best epoch: "+str(bestPredictionEpoch))
 plt.figure(figsize = (18,18))
 plt.subplot(2,1,1)

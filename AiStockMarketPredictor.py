@@ -403,7 +403,7 @@ print('\tTraining, optimizing and prediction prerparation complete')
 #===============================================================================
 
 #define states/operations/constants
-epochs = 30 #number of runs
+epochs = 30#number of runs
 validSummary = 1 # test predictions interval
 numPredictContinous = 100 # Number of steps to continously predict for
 
@@ -550,8 +550,8 @@ for ep in range(epochs):
 bestIndex = mseArray.index(min(mseArray))
 bestPredictionEpoch = 29# replace with best epoch
 print("best epoch: "+str(bestPredictionEpoch))
-plt.figure(figsize = (24,24))
-plt.subplot(2,1,1)
+plt.figure(figsize = (18,18))
+
 plt.plot(range(df.shape[0]),allMidpointData,color='b')
 
 # Plotting how the predictions change over time
@@ -566,10 +566,11 @@ plt.title('Evolution of Test Predictions Over Time',fontsize=18)
 plt.xlabel('Date',fontsize=18)
 plt.ylabel('Variation in Midprice',fontsize=18)
 plt.xlim(11000,12500)
+plt.show()
 
-plt.subplot(2,1,2)
 
-# Predicting the best test prediction you got
+# Predicting the best test prediction achieved
+plt.figure(figsize = (18,18))
 plt.plot(range(df.shape[0]),allMidpointData,color='b')
 for xval,yval in zip(xAxisSeq,predictionsOverTime[bestPredictionEpoch]):
     plt.plot(xval,yval,color='g')

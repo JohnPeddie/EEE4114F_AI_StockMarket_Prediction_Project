@@ -403,7 +403,7 @@ print('\tTraining, optimizing and prediction prerparation complete')
 #===============================================================================
 
 #define states/operations/constants
-epochs = 10 #number of runs
+epochs = 30 #number of runs
 validSummary = 1 # test predictions interval
 numPredictContinous = 100 # Number of steps to continously predict for
 
@@ -548,9 +548,9 @@ for ep in range(epochs):
 #===============================================================================
 
 bestIndex = mseArray.index(min(mseArray))
-bestPredictionEpoch = 9# replace with best epoch
+bestPredictionEpoch = 29# replace with best epoch
 print("best epoch: "+str(bestPredictionEpoch))
-plt.figure(figsize = (18,18))
+plt.figure(figsize = (24,24))
 plt.subplot(2,1,1)
 plt.plot(range(df.shape[0]),allMidpointData,color='b')
 
@@ -560,11 +560,11 @@ startAlpha = 0.25
 alpha  = np.arange(startAlpha,1.1,(1.0-startAlpha)/len(predictionsOverTime[::3]))
 for p_i,p in enumerate(predictionsOverTime[::3]):
     for xval,yval in zip(xAxisSeq,p):
-        plt.plot(xval,yval,color='r',alpha=alpha[p_i])
+        plt.plot(xval,yval,color='g',alpha=alpha[p_i])
 
 plt.title('Evolution of Test Predictions Over Time',fontsize=18)
 plt.xlabel('Date',fontsize=18)
-plt.ylabel('Mid Price',fontsize=18)
+plt.ylabel('Variation in Midprice',fontsize=18)
 plt.xlim(11000,12500)
 
 plt.subplot(2,1,2)
@@ -572,7 +572,7 @@ plt.subplot(2,1,2)
 # Predicting the best test prediction you got
 plt.plot(range(df.shape[0]),allMidpointData,color='b')
 for xval,yval in zip(xAxisSeq,predictionsOverTime[bestPredictionEpoch]):
-    plt.plot(xval,yval,color='r')
+    plt.plot(xval,yval,color='g')
 
 plt.title('Best Test Predictions Over Time',fontsize=18)
 plt.xlabel('Date',fontsize=18)
